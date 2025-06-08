@@ -29,6 +29,7 @@ namespace ImageTool
         ImageController controller;
         ImageView? outputView;
         FormJump jumpForm;
+        Settings settings;
 
         PostProcOptions itpOptions = new PostProcOptions();
         PostProcForm itpForm;
@@ -48,12 +49,16 @@ namespace ImageTool
 
         public string CurFolder { get { return curFolder; } }
         public string[] FolderList { get { return folderlist; } }
+        public ImageController Controller { get { return controller; } }
 
-        public MainForm(string[] folderlist)
+        public MainForm(string[] folderlist, Settings settings)
         {
             InitializeComponent();
+            
+            this.folderlist = folderlist;
+            this.settings = settings;
 
-            controller = new ImageController(this);
+            controller = new ImageController(this, settings);
 
             {
                 checkBoxShowSelectionsOnOtherImages = new CheckBox();
@@ -123,10 +128,13 @@ namespace ImageTool
             curFolder = "";
 
             itpOptions.Load();
-            itpForm = new PostProcForm(this, itpOptions);
+            itpForm = new PostProcForm(this, itpOptions, settings);
 
             // just to silence warning
-            jumpForm = new FormJump(this, folderlist, "");
+            jumpForm = new FormJump(this, folderlist, "", settings);
+            
+            // Add form closing event to save settings
+            this.FormClosing += MainForm_FormClosing;
         }
 
         int GetCurFolderId() {
@@ -137,16 +145,16 @@ namespace ImageTool
         {
             curFolder = folder;
             controller.Dispose();
-            controller = new ImageController(this);
+            controller = new ImageController(this, settings);
 
             var fn = curFolder;
-            var images = Directory.EnumerateFiles(fn).Where(f => f.EndsWith(".png")).ToArray();
+            var images = Directory.EnumerateFiles(fn).Where(f => f.EndsWith(settings.ImageFileExtension)).ToArray();
             Array.Sort(images);
             
             flowLayoutPanel.Controls.Clear();
             foreach (var image in images)
             {
-                if (Path.GetFileNameWithoutExtension(image) == "output") continue;
+                if (Path.GetFileNameWithoutExtension(image) == Path.GetFileNameWithoutExtension(settings.OutputImageFileName)) continue;
                 var view = new ImageView(image, controller);
                 controller.AddView(view);
                 flowLayoutPanel.Controls.Add(view);
@@ -286,6 +294,52 @@ Let us know if there are any missing features which would improve your workflow.
 https://github.com/ph3at/image_tool";
             MessageBox.Show(string.Format(text, Program.VERSION), "PH3 Imagetool", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+        
+        private void buttonSettings_Click(object sender, EventArgs e)
+        {
+            var settingsForm = new SettingsForm(settings);
+            if (settingsForm.ShowDialog() == DialogResult.OK)
+            {
+                // Reload metadata with new settings
+                ReloadMetainformation();
+                MessageBox.Show("Settings saved. Some changes may require restarting the application.", 
+                    "Settings", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+        
+        private void buttonChangeDir_Click(object sender, EventArgs e)
+        {
+            using (var folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "Select the folder containing your image directories";
+                folderDialog.SelectedPath = Directory.GetCurrentDirectory();
+                folderDialog.ShowNewFolderButton = false;
+                
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    // Save current directory if remember is enabled
+                    if (settings.RememberLastDirectory)
+                    {
+                        settings.LastUsedDirectory = folderDialog.SelectedPath;
+                        settings.Save();
+                    }
+                    
+                    // Restart application with new directory
+                    System.Diagnostics.Process.Start(Application.ExecutablePath, $"\"{folderDialog.SelectedPath}\"");
+                    Application.Exit();
+                }
+            }
+        }
+        
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // Save current directory if RememberLastDirectory is enabled
+            if (settings.RememberLastDirectory)
+            {
+                settings.LastUsedDirectory = Directory.GetCurrentDirectory();
+                settings.Save();
+            }
+        }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
@@ -319,7 +373,7 @@ https://github.com/ph3at/image_tool";
 
         private void MainForm_Shown(object sender, EventArgs e)
         {
-            var loadingForm = new LoadingForm();
+            var loadingForm = new LoadingForm(settings);
             loadingForm.StartPosition = FormStartPosition.CenterParent;
 
             var thumbThread = new Thread(new ThreadStart(delegate
@@ -329,7 +383,7 @@ https://github.com/ph3at/image_tool";
                 // load thumbnails
                 for (int i = 0; i < folderlist.Length; i++)
                 {
-                    var imgfn = folderlist[i] + "/original_psp.png";
+                    var imgfn = settings.GetThumbnailPath(folderlist[i]);
                     if (File.Exists(imgfn))
                     {
                         thumbnails.Add(folderlist[i], Program.ReadImageFromFile(imgfn));
@@ -350,7 +404,7 @@ https://github.com/ph3at/image_tool";
 
             LoadFolder(folderlist.FirstOrDefault(""));
 
-            jumpForm = new FormJump(this, folderlist, curFolder);
+            jumpForm = new FormJump(this, folderlist, curFolder, settings);
         }
 
         internal void ReloadMetainformation()
@@ -361,38 +415,47 @@ https://github.com/ph3at/image_tool";
             hasRedraw.Clear();
 
             // load assocs
-            var assoclines = File.ReadAllLines("assoc.txt");
-            foreach (var assocline in assoclines)
+            if (File.Exists(settings.AssocFileName))
             {
-                var elems = assocline.Split(" ");
-                string rest = assocline.Replace(elems[0], "").Trim();
-                assocs.Add(elems[0], rest);
+                var assoclines = File.ReadAllLines(settings.AssocFileName);
+                foreach (var assocline in assoclines)
+                {
+                    var elems = assocline.Split(" ");
+                    string rest = assocline.Replace(elems[0], "").Trim();
+                    assocs.Add(elems[0], rest);
+                }
             }
             // load names
-            var namelines = File.ReadAllLines("names.txt");
-            foreach (var nameline in namelines)
+            if (File.Exists(settings.NamesFileName))
             {
-                var elems = nameline.Split(" ");
-                names.Add(elems[0], elems[1]);
+                var namelines = File.ReadAllLines(settings.NamesFileName);
+                foreach (var nameline in namelines)
+                {
+                    var elems = nameline.Split(" ");
+                    names.Add(elems[0], elems[1]);
+                }
             }
             // load alpha
-            var alphalines = File.ReadAllLines("alpha.txt");
-            foreach (var alphaline in alphalines)
+            if (File.Exists(settings.AlphaFileName))
             {
-                var elems = alphaline.Split(" ");
-                bool alpha = Boolean.Parse(elems[1]);
-                hasAlpha.Add(elems[0], alpha);
+                var alphalines = File.ReadAllLines(settings.AlphaFileName);
+                foreach (var alphaline in alphalines)
+                {
+                    var elems = alphaline.Split(" ");
+                    bool alpha = Boolean.Parse(elems[1]);
+                    hasAlpha.Add(elems[0], alpha);
+                }
             }
             // check output
             foreach (string folder in folderlist)
             {
-                var specfn = ImageController.GetOutputSpecFn(folder);
+                var specfn = settings.GetOutputSpecPath(folder);
                 bool hasSpec = File.Exists(specfn);
                 hasOutput.Add(folder, hasSpec);
                 bool thisHasRedraw = false;
                 if (hasSpec)
                 {
-                    var jsonString = File.ReadAllText(ImageController.GetOutputSpecFn(folder));
+                    var jsonString = File.ReadAllText(specfn);
                     var outputSpec = JsonSerializer.Deserialize<OutputSpec>(jsonString);
                     thisHasRedraw = outputSpec.RedrawRects.Count > 0;
                 }
@@ -403,7 +466,7 @@ https://github.com/ph3at/image_tool";
         private void buttonAlphaFix_Click(object sender, EventArgs e)
         {
             var fn = curFolder;
-            var images = Directory.EnumerateFiles(fn).Where(f => f.EndsWith(".png")).ToArray();
+            var images = Directory.EnumerateFiles(fn).Where(f => f.EndsWith(settings.ImageFileExtension)).ToArray();
             Array.Sort(images);
 
             foreach (var image in images)
@@ -437,7 +500,7 @@ https://github.com/ph3at/image_tool";
         private void buttonRestoreInputs_Click(object sender, EventArgs e)
         {
             var fn = curFolder;
-            var images = Directory.EnumerateFiles(fn).Where(f => f.EndsWith(".png")).ToArray();
+            var images = Directory.EnumerateFiles(fn).Where(f => f.EndsWith(settings.ImageFileExtension)).ToArray();
             Array.Sort(images);
 
             foreach (var image in images)

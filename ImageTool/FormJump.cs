@@ -30,13 +30,15 @@ namespace ImageTool
         MainForm mainForm;
         string[] rootFolderList;
         string[] folderList;
+        Settings settings;
 
         Font font, nameFont, smallFont, emoFont;
 
-        public FormJump(MainForm mainForm, string[] folderList, string selectedFolder)
+        public FormJump(MainForm mainForm, string[] folderList, string selectedFolder, Settings settings)
         {
             InitializeComponent();
             this.mainForm = mainForm;
+            this.settings = settings;
             rootFolderList = folderList.Select(x => x.ToString()).ToArray();
             this.folderList = folderList;
 
@@ -181,7 +183,7 @@ namespace ImageTool
         {
             if(listBox.SelectedItem != null)
             {
-                Process.Start("explorer.exe", Path.GetFullPath(".\\" + listBox.SelectedItem.ToString()));
+                Process.Start(settings.FileExplorerCommand, Path.GetFullPath(".\\" + listBox.SelectedItem.ToString()));
             }
         }
 

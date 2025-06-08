@@ -1,9 +1,7 @@
 {
   "profiles": {
     "ImageTool": {
-      "commandName": "Project",
-      "commandLineArgs": "\"H:\\dev\\zao_map_textures\\prepared\"",
-      "workingDirectory": "H:\\dev\\zao_map_textures"
+      "commandName": "Project"
     }
   }
 }

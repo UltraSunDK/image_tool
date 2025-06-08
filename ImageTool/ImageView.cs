@@ -235,6 +235,7 @@ namespace ImageTool
         readonly Font font = new Font("Calibri", 10, FontStyle.Bold, GraphicsUnit.Point);
 
         private readonly MainForm mainForm;
+        private readonly Settings settings;
 
         List<SelectionRect> selectionRects = new List<SelectionRect>();
 
@@ -281,9 +282,10 @@ namespace ImageTool
         private readonly float MIN_ZOOM = 0.25f;
         private float ZoomFactor { get { return 1.0f + zoom * ZOOM_STEP; } }
 
-        public ImageController(MainForm mainForm)
+        public ImageController(MainForm mainForm, Settings settings)
         {
             this.mainForm = mainForm;
+            this.settings = settings;
         }
 
         public int TargetW { get { return largestNativeWidth; } }
@@ -580,13 +582,13 @@ namespace ImageTool
             mainForm.Refresh();
         }
 
-        internal static string GetOutputSpecFn(string folder)
+        internal string GetOutputSpecFn(string folder)
         {
-            return folder + "/output_spec.json";
+            return settings.GetOutputSpecPath(folder);
         }
-        internal static string GetOutputImgFn(string folder)
+        internal string GetOutputImgFn(string folder)
         {
-            return folder + "/output.png";
+            return settings.GetOutputImagePath(folder);
         }
 
         void ClearState()

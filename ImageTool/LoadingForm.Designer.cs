@@ -34,7 +34,7 @@
             // 
             // labelLoading
             // 
-            this.labelLoading.Image = global::ImageTool.Properties.Resources.ph3_games_logo_small;
+            // Image will be set in constructor if available
             this.labelLoading.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
             this.labelLoading.Location = new System.Drawing.Point(12, 9);
             this.labelLoading.Name = "labelLoading";

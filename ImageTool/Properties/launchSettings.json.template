@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ImageTool": {
+      "commandName": "Project",
+      "// Comment": "Uncomment and modify the lines below to set a specific working directory for debugging",
+      "// commandLineArgs": "\"C:\\path\\to\\your\\image\\folder\"",
+      "// workingDirectory": "C:\\path\\to\\your\\working\\directory"
+    }
+  }
+}

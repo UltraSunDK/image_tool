@@ -29,12 +29,14 @@ namespace ImageTool
     {
         MainForm mainForm;
         PostProcOptions options;
+        Settings settings;
 
-        internal PostProcForm(MainForm mainForm, PostProcOptions itpOptions)
+        internal PostProcForm(MainForm mainForm, PostProcOptions itpOptions, Settings settings)
         {
             InitializeComponent();
             this.mainForm = mainForm;
             options = itpOptions;
+            this.settings = settings;
 
             textBoxExe.Text = options.ExePath;
             textBoxOptions.Text = options.Parameters;
@@ -63,9 +65,12 @@ namespace ImageTool
             }
         }
 
-        private string BuildFullFn(string path, string id, string extension = "itp")
+        private string BuildFullFn(string path, string id, string extension = null)
         {
-            return String.Format("{0}/{1}_{2}.{3}", path, id, mainForm.Names[id], extension);
+            if (extension == null)
+                extension = settings.PostProcessOutputExtension;
+            string name = mainForm.Names.ContainsKey(id) ? mainForm.Names[id] : id;
+            return String.Format("{0}/{1}_{2}.{3}", path, id, name, extension);
         }
 
         public void SaveCurImgToITP()
@@ -73,7 +78,7 @@ namespace ImageTool
             Directory.CreateDirectory(options.OutputPath);
 
             string id = mainForm.CurFolder;
-            string pngfn = ImageController.GetOutputImgFn(id);
+            string pngfn = mainForm.Controller.GetOutputImgFn(id);
             string itpfn = BuildFullFn(options.OutputPath, id);
 
             RunPicView(pngfn, itpfn);
@@ -95,7 +100,7 @@ namespace ImageTool
             var cursor = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
 
-            string tmpPath = Path.GetTempPath() + "/PH3ImageTool/";
+            string tmpPath = Path.Combine(Path.GetTempPath(), settings.TempDirectoryName);
             Directory.CreateDirectory(tmpPath);
             EmptyDir(tmpPath);
 
@@ -104,7 +109,7 @@ namespace ImageTool
             {
                 try
                 {
-                    string src = ImageController.GetOutputImgFn(id);
+                    string src = mainForm.Controller.GetOutputImgFn(id);
                     string dst = BuildFullFn(tmpPath, id, "png");
                     File.Copy(src, dst, true);
                 } catch { }

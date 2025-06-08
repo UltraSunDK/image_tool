@@ -25,10 +25,30 @@ namespace ImageTool
 {
     public partial class LoadingForm : Form
     {
-        public LoadingForm()
+        public LoadingForm(Settings settings)
         {
             InitializeComponent();
             progressBar.Maximum = 1000;
+            
+            // Try to load loading image from file if available
+            try
+            {
+                string imagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", settings.LoadingImageFileName);
+                if (File.Exists(imagePath))
+                {
+                    labelLoading.Image = Image.FromFile(imagePath);
+                }
+                else
+                {
+                    // No loading image available, just show text
+                    labelLoading.Image = null;
+                }
+            }
+            catch
+            {
+                // Error loading image, just show text
+                labelLoading.Image = null;
+            }
         }
 
         internal void SetProgress(float v)

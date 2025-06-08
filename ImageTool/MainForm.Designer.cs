@@ -42,6 +42,8 @@
             this.buttonAlphaFix = new System.Windows.Forms.Button();
             this.buttonRestoreInputs = new System.Windows.Forms.Button();
             this.buttonITP = new System.Windows.Forms.Button();
+            this.buttonSettings = new System.Windows.Forms.Button();
+            this.buttonChangeDir = new System.Windows.Forms.Button();
             this.statusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -189,11 +191,35 @@
             this.buttonITP.UseVisualStyleBackColor = true;
             this.buttonITP.Click += new System.EventHandler(this.buttonITP_Click);
             // 
+            // buttonSettings
+            // 
+            this.buttonSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonSettings.Location = new System.Drawing.Point(1360, 3);
+            this.buttonSettings.Name = "buttonSettings";
+            this.buttonSettings.Size = new System.Drawing.Size(103, 23);
+            this.buttonSettings.TabIndex = 14;
+            this.buttonSettings.Text = "Settings";
+            this.buttonSettings.UseVisualStyleBackColor = true;
+            this.buttonSettings.Click += new System.EventHandler(this.buttonSettings_Click);
+            // 
+            // buttonChangeDir
+            // 
+            this.buttonChangeDir.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonChangeDir.Location = new System.Drawing.Point(1220, 3);
+            this.buttonChangeDir.Name = "buttonChangeDir";
+            this.buttonChangeDir.Size = new System.Drawing.Size(134, 23);
+            this.buttonChangeDir.TabIndex = 15;
+            this.buttonChangeDir.Text = "Change Directory";
+            this.buttonChangeDir.UseVisualStyleBackColor = true;
+            this.buttonChangeDir.Click += new System.EventHandler(this.buttonChangeDir_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1584, 761);
+            this.Controls.Add(this.buttonChangeDir);
+            this.Controls.Add(this.buttonSettings);
             this.Controls.Add(this.buttonITP);
             this.Controls.Add(this.buttonRestoreInputs);
             this.Controls.Add(this.buttonAlphaFix);
@@ -237,5 +263,7 @@
         private Button buttonAlphaFix;
         private Button buttonRestoreInputs;
         private Button buttonITP;
+        private Button buttonSettings;
+        private Button buttonChangeDir;
     }
 }

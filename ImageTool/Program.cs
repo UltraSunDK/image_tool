@@ -23,12 +23,61 @@ namespace ImageTool
         [STAThread]
         static void Main(string[] args)
         {
-            if(args.Length > 0) Directory.SetCurrentDirectory(args[0]);
-            else Directory.SetCurrentDirectory("prepared");
+            ApplicationConfiguration.Initialize();
+            
+            // Load settings
+            var settings = Settings.Load();
+            
+            // Determine working directory
+            string workingDir = null;
+            if(args.Length > 0) 
+            {
+                workingDir = args[0];
+            }
+            else if(settings.RememberLastDirectory && !string.IsNullOrEmpty(settings.LastUsedDirectory) && Directory.Exists(settings.LastUsedDirectory))
+            {
+                workingDir = settings.LastUsedDirectory;
+            }
+            else if(!string.IsNullOrEmpty(settings.DefaultWorkingDirectory) && Directory.Exists(settings.DefaultWorkingDirectory))
+            {
+                workingDir = settings.DefaultWorkingDirectory;
+            }
+            
+            // If no valid directory found, prompt user to select one
+            if (string.IsNullOrEmpty(workingDir) || !Directory.Exists(workingDir))
+            {
+                using (var folderDialog = new FolderBrowserDialog())
+                {
+                    folderDialog.Description = "Select the folder containing your image directories";
+                    folderDialog.ShowNewFolderButton = false;
+                    
+                    if (folderDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        workingDir = folderDialog.SelectedPath;
+                        // Save this as the last used directory
+                        settings.LastUsedDirectory = workingDir;
+                        settings.Save();
+                    }
+                    else
+                    {
+                        // User cancelled, exit application
+                        return;
+                    }
+                }
+            }
+            
+            Directory.SetCurrentDirectory(workingDir);
             var folderlist = Directory.GetDirectories(".").Select(x => x.Replace(".\\", "")).ToArray();
             Array.Sort(folderlist);
-            ApplicationConfiguration.Initialize();
-            Application.Run(new MainForm(folderlist));
+            
+            if (folderlist.Length == 0)
+            {
+                MessageBox.Show("No subdirectories found in the selected folder. Please ensure the folder contains image directories.", 
+                    "No Images Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            Application.Run(new MainForm(folderlist, settings));
         }
 
         // This is a workaround regarding some of the most inane API design I've ever encountered in a widespread product.
